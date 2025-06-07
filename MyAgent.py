@@ -6,8 +6,10 @@ class Agent:
         self.stuck_number=0
     def chooseAction(self, observations, possibleActions):
         threshold=1.5 # This will decide the distance if the obstacle is close ie: if its close to 1.7 
+        goal_velocity=3.0# this will tell on which speed we want to reach the goal
         low_speed=0.7
         min_velocity=0.2# I am using this to check the min speed which i consider the car stuck
+
         lidar=observations['lidar'] # As we know we have 5 distances ie: left,front-left,front,front-right,right
         velocity=observations['velocity'] # this will capture current speed of the car 
 
@@ -25,7 +27,7 @@ class Agent:
         else:
             self.stuck_number=0
 
-        if self.stuck_number>10:
+        if self.stuck_number>5:
             self.stuck_number=0
             if ('right','accelerate') in possibleActions:
                 return ('right','accelerate')
@@ -35,7 +37,7 @@ class Agent:
                 return possibleActions[0]
 
         #if its not curve or anything i have set the default action to go straight and accelearate.
-        action=('straight','accelerate') if ('straight','coast') in possibleActions else possibleActions[0]
+        action=('straight','accelerate') if ('straight','accelerate') in possibleActions else possibleActions[0]
 
         #If the obstacle is close in the front or front_left/right apply brake and turn the opposite.
         if close_to_front_obstacle or close_to_front_left_obstacle or close_to_front_right_obstacle:
@@ -44,7 +46,7 @@ class Agent:
             elif close_to_front_right_obstacle and ('left','brake') in possibleActions:
                 action=('left','brake')
             elif ('straight','brake') in possibleActions:
-                action=('straight','brake')
+                action=('straight','coast')
         elif  close_to_left_obstacle and ('right','coast') in possibleActions: #if it is complete left slowly move to right and visa versa
             action=('right','coast')
         elif close_to_right_obstacle and ('left','coast') in possibleActions:
@@ -55,6 +57,9 @@ class Agent:
                     action=('straight','accelerate')
             elif velocity<low_speed: #if the speed is below 0.3 but not stopped or stuck  we can keep accelerating
                 action=('straight','accelerate') if ('straight','accelerate') in possibleActions else action
-           
+            elif velocity<goal_velocity:
+                action=('straight','accelerate') if ('straight','accelerate') in possibleActions else action
+            else:
+                action=('straight','accelerate') if ('straight','accelerate') in possibleActions else action #if not slow or stuck moving
 
         return action
